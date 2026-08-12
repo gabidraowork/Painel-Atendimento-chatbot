@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "../lib/prisma.js"
+import { generateToken } from "../lib/jwt.js"
 import { error } from "node:console";
 
 export async function registerUser(
@@ -48,9 +49,10 @@ export async function loginUser(
 
     if(!user) throw new Error("Usuario nao encontrado");
     if(!user.active) throw new Error("Usuario nao ativo");
-    const hashPassword = user.hashPassword;
+    
+    const passwordMatch = bcrypt.compare(password, user.hashPassword);
 
-    if (! await bcrypt.compare(password, hashPassword)) throw new Error("Senha invalida");
+    if (!passwordMatch) throw new Error("Senha invalida");
     const loggedUser = {
         id: user.id,
         name: user.name,
@@ -59,6 +61,14 @@ export async function loginUser(
         active: user.active,
     };
 
-    return loggedUser;
+    const token = generateToken(
+        user.id,
+        user.role
+    )
+
+    return {
+        user: loggedUser,
+        token
+    };
 
 }

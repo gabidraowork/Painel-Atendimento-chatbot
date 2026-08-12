@@ -33,12 +33,14 @@ export async function login(req: Request, res: Response){
     const {email, password} = req.body;
 
     try {
-        const loggedUser= await loginUser(email,password);
+        const { user, token } = await loginUser(email,password);
         
         res.status(200).json({
             message: "Usuário logado com sucesso",
-            user: loggedUser
-        })
+            user,
+            token
+        });
+        
     } catch(err){
          if (
             err instanceof Error &&
