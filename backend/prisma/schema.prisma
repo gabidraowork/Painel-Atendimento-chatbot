@@ -17,8 +17,23 @@ model User {
   role         Role
   active       Boolean  @default(true)
   hashPassword String
+  clients      Client[]
 
   @@map("users")
+}
+
+model Client {
+  id          Int      @id @default(autoincrement())
+  phone       String   @unique
+  name        String
+  attendantId Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  answered    Boolean  @default(false)
+  attendant   User     @relation(fields: [attendantId], references: [id])
+
+  @@index([attendantId])
+  @@map("clients")
 }
 
 enum Role {

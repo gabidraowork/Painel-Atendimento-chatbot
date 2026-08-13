@@ -18,11 +18,5 @@ router.get("/test", authenticate, (req, res) => {
     });
 });
 
-router.get("/admin-test", authenticate, authorize("ADMIN"), (req, res) => {
-    return res.json({
-        message: "Você é um administrador"
-    })
-})
-
 
 export default router;
