@@ -1,8 +1,8 @@
-﻿# Painel de Atendimento
+# Painel de Atendimento
 
 Backend de uma aplicação de gerenciamento de usuários e atendimento, desenvolvido com **Node.js, TypeScript, Express, Prisma e MySQL**.
 
-O projeto está sendo construído com foco em boas práticas de desenvolvimento backend, separação de responsabilidades, validação de dados, autenticação e segurança.
+O projeto está sendo construído com foco em boas práticas de desenvolvimento backend, separação de responsabilidades, validação de dados, autenticação, autorização e segurança.
 
 > 🚧 **Status:** Em desenvolvimento
 
@@ -10,11 +10,15 @@ O projeto está sendo construído com foco em boas práticas de desenvolvimento 
 
 ## 📌 Sobre o projeto
 
-O **Painel de Atendimento** tem como objetivo servir como base para um sistema interno de gerenciamento de atendentes e usuários.
+O **Painel de Atendimento** tem como objetivo servir como base para um sistema interno de gerenciamento de atendentes e solicitações de atendimento humano encaminhadas por um chatbot.
 
-A aplicação possui uma API REST responsável por operações de autenticação e gerenciamento de usuários, utilizando uma arquitetura separada em **Routes → Middlewares → Controllers → Services → Prisma → MySQL**.
+A aplicação possui uma API REST responsável por autenticação, gerenciamento de usuários e gerenciamento de clientes.
 
-O projeto também está sendo desenvolvido de forma incremental, adicionando recursos de segurança e autenticação conforme a aplicação evolui.
+A arquitetura utiliza separação de responsabilidades:
+
+**Routes → Middlewares → Controllers → Services → Prisma → MySQL**
+
+O sistema possui autenticação através de **JWT** e controle de acesso baseado em **roles**.
 
 ---
 
@@ -22,21 +26,14 @@ O projeto também está sendo desenvolvido de forma incremental, adicionando rec
 
 ### Backend
 
-* **Node.js**
-* **TypeScript**
-* **Express**
-* **Prisma ORM**
-* **MySQL**
-* **Zod**
-* **bcrypt**
-
-### Em desenvolvimento
-
-* **JWT**
-* Autenticação baseada em token
-* Middleware de autenticação
-* Autorização baseada em `role`
-* Proteção de rotas
+- **Node.js**
+- **TypeScript**
+- **Express**
+- **Prisma ORM**
+- **MySQL**
+- **Zod**
+- **bcrypt**
+- **JWT**
 
 ---
 
@@ -51,7 +48,11 @@ Request
 Routes
    │
    ▼
-Validation Middleware
+Middlewares
+   │
+   ├── Validation
+   ├── Authentication
+   └── Authorization
    │
    ▼
 Controllers
@@ -64,19 +65,19 @@ Prisma ORM
    │
    ▼
 MySQL
-```
+````
 
 ### Responsabilidades
 
-| Camada          | Responsabilidade                          |
-| --------------- | ----------------------------------------- |
-| **Routes**      | Define endpoints e middlewares utilizados |
-| **Schemas**     | Define os contratos e regras de validação |
-| **Middlewares** | Intercepta e valida requisições           |
-| **Controllers** | Gerencia HTTP, status codes e respostas   |
-| **Services**    | Concentra regras de negócio               |
-| **Prisma**      | Comunicação com o banco de dados          |
-| **MySQL**       | Persistência dos dados                    |
+| Camada          | Responsabilidade                                     |
+| --------------- | ---------------------------------------------------- |
+| **Routes**      | Define endpoints e middlewares utilizados            |
+| **Schemas**     | Define contratos e regras de validação               |
+| **Middlewares** | Intercepta, valida, autentica e autoriza requisições |
+| **Controllers** | Gerencia HTTP, status codes e respostas              |
+| **Services**    | Concentra regras de negócio                          |
+| **Prisma**      | Comunicação com o banco de dados                     |
+| **MySQL**       | Persistência dos dados                               |
 
 ---
 
@@ -86,19 +87,25 @@ MySQL
 backend/
 ├── src/
 │   ├── controllers/
-│   │   └── auth.controller.ts
+│   │   ├── auth.controller.ts
+│   │   └── clients.controller.ts
 │   │
 │   ├── middlewares/
-│   │   └── validate.middleware.ts
+│   │   ├── validate.middleware.ts
+│   │   ├── auth.middleware.ts
+│   │   └── authorize.middleware.ts
 │   │
 │   ├── routes/
-│   │   └── auth.routes.ts
+│   │   ├── auth.routes.ts
+│   │   ├── users.routes.ts
+│   │   └── clients.routes.ts
 │   │
 │   ├── schemas/
 │   │   └── auth.schema.ts
 │   │
 │   ├── services/
-│   │   └── auth.service.ts
+│   │   ├── auth.service.ts
+│   │   └── clients.service.ts
 │   │
 │   └── lib/
 │       └── prisma.ts
@@ -115,9 +122,29 @@ backend/
 
 # 🔐 Autenticação
 
-Atualmente o projeto possui o fluxo de **cadastro e login de usuários**.
+O projeto possui um sistema de **cadastro e login de usuários utilizando JWT**.
 
-## Cadastro
+O fluxo de autenticação é dividido em:
+
+```text
+Cadastro
+   ↓
+Hash da senha
+   ↓
+MySQL
+
+Login
+   ↓
+Verificação da senha
+   ↓
+JWT
+   ↓
+Token de acesso
+```
+
+---
+
+# 👤 Cadastro
 
 Endpoint:
 
@@ -165,23 +192,6 @@ O cadastro utiliza Zod para validar:
 
 Uma requisição inválida é interrompida antes de chegar ao Controller.
 
-### Exemplo de erro
-
-```json
-{
-  "message": "Dados inválidos",
-  "errors": {
-    "name": "Nome deve ter pelo menos 3 caracteres"
-  }
-}
-```
-
-Status:
-
-```http
-400 Bad Request
-```
-
 ---
 
 # 🔑 Login
@@ -209,7 +219,11 @@ Busca usuário por email
         ↓
 bcrypt.compare()
         ↓
-Usuário autenticado
+Credenciais válidas
+        ↓
+Geração do JWT
+        ↓
+Token de acesso
 ```
 
 ### Exemplo de requisição
@@ -223,7 +237,7 @@ Usuário autenticado
 
 ### Login bem-sucedido
 
-Atualmente, o endpoint retorna os dados públicos do usuário:
+O endpoint retorna os dados públicos do usuário e o token de autenticação.
 
 ```json
 {
@@ -234,7 +248,8 @@ Atualmente, o endpoint retorna os dados públicos do usuário:
     "email": "joao@email.com",
     "role": "ATENDENTE",
     "active": true
-  }
+  },
+  "token": "JWT_TOKEN"
 }
 ```
 
@@ -242,35 +257,294 @@ A senha e seu hash **não são retornados na resposta**.
 
 ---
 
-# 🔒 Segurança de senhas
+# 🎫 JWT
 
-As senhas não são armazenadas em texto puro.
+Após o login, o backend gera um **JSON Web Token (JWT)**.
 
-No cadastro, o backend utiliza:
+O token contém informações necessárias para identificar o usuário autenticado, incluindo:
 
-```text
-Senha
-  ↓
-bcrypt.hash()
-  ↓
-Hash
-  ↓
-MySQL
+```json
+{
+  "userId": 1,
+  "role": "ATENDENTE"
+}
 ```
 
-No login:
+As rotas protegidas devem receber o token através do header:
 
-```text
-Senha enviada
-      ↓
-bcrypt.compare()
-      ↓
-Hash armazenado
-      ↓
-Credenciais válidas?
+```http
+Authorization: Bearer SEU_TOKEN
 ```
 
-O projeto não tenta descriptografar o hash da senha.
+---
+
+# 🛡️ Middleware de autenticação
+
+O middleware `authenticate` é responsável por verificar se a requisição possui um JWT válido.
+
+Fluxo:
+
+```text
+Request
+   │
+   ▼
+Authorization Header
+   │
+   ▼
+Bearer Token
+   │
+   ▼
+Validação do JWT
+   │
+   ├── Inválido ──────► 401
+   │
+   ▼
+Usuário autenticado
+   │
+   ▼
+req.user
+```
+
+Após a autenticação, informações do usuário ficam disponíveis através de:
+
+```ts
+req.user
+```
+
+Exemplo:
+
+```ts
+{
+    userId: 1,
+    role: "ATENDENTE"
+}
+```
+
+---
+
+# 🔐 Autorização por Role
+
+Além de autenticar o usuário, o sistema possui autorização baseada em **roles**.
+
+Atualmente existem:
+
+```text
+ADMIN
+ATENDENTE
+```
+
+A autorização é realizada através do middleware:
+
+```ts
+authorize()
+```
+
+Exemplo:
+
+```ts
+router.get(
+    "/",
+    authenticate,
+    authorize("ATENDENTE", "ADMIN"),
+    listClients
+);
+```
+
+O fluxo é:
+
+```text
+Request
+   ↓
+authenticate
+   ↓
+Usuário autenticado?
+   ↓
+authorize()
+   ↓
+Role possui permissão?
+   ├── NÃO ──────► 403
+   │
+   ▼
+Controller
+```
+
+---
+
+# 👥 Roles
+
+## ADMIN
+
+O administrador possui acesso aos clientes do sistema.
+
+Na listagem de clientes, o ADMIN pode visualizar todos os clientes cadastrados e informações do atendente responsável.
+
+---
+
+## ATENDENTE
+
+O atendente possui acesso somente aos clientes atribuídos a ele.
+
+A API utiliza o `userId` obtido através do JWT para filtrar os clientes:
+
+```ts
+where: {
+    attendantId: userId
+}
+```
+
+Dessa forma, o atendente não precisa enviar seu próprio ID na requisição.
+
+---
+
+# 👤 Usuários
+
+Os usuários possuem atualmente informações como:
+
+```text
+id
+name
+email
+hashPassword
+role
+active
+```
+
+O campo `role` define o nível de acesso:
+
+```text
+ADMIN
+ATENDENTE
+```
+
+O campo `active` indica se o usuário está habilitado para utilização.
+
+```text
+active: true
+```
+
+Usuário ativo.
+
+```text
+active: false
+```
+
+Usuário desativado.
+
+---
+
+# 👥 Clientes
+
+O sistema possui uma entidade `Client` responsável por representar os clientes que precisam de atendimento.
+
+Principais campos:
+
+```text
+id
+phone
+name
+attendantId
+createdAt
+updatedAt
+answered
+```
+
+Existe um relacionamento entre usuários e clientes:
+
+```text
+User
+  │
+  │ 1:N
+  ▼
+Client
+```
+
+Um usuário pode possuir vários clientes, enquanto cada cliente possui um atendente responsável.
+
+---
+
+# 📋 Listagem de clientes
+
+Endpoint:
+
+```http
+GET /clients
+```
+
+A rota é protegida por autenticação e autorização:
+
+```ts
+router.get(
+    "/",
+    authenticate,
+    authorize("ATENDENTE", "ADMIN"),
+    listClients
+);
+```
+
+---
+
+## ADMIN
+
+O ADMIN pode visualizar todos os clientes.
+
+Exemplo de resposta:
+
+```json
+{
+  "clients": [
+    {
+      "id": 1,
+      "phone": "5511999999999",
+      "name": "Joao",
+      "attendant": {
+        "id": 2,
+        "name": "Carlos",
+        "email": "carlos@email.com",
+        "role": "ATENDENTE",
+        "active": true
+      }
+    }
+  ]
+}
+```
+
+---
+
+## ATENDENTE
+
+O ATENDENTE visualiza somente os clientes atribuídos a ele.
+
+Exemplo:
+
+```json
+{
+  "clients": [
+    {
+      "name": "Joao",
+      "phone": "5511999999999",
+      "answered": false
+    }
+  ]
+}
+```
+
+A filtragem é realizada no backend através do `attendantId` do usuário autenticado.
+
+---
+
+# 🔒 Segurança
+
+O projeto possui algumas medidas de segurança:
+
+* Senhas armazenadas utilizando `bcrypt`
+* Autenticação utilizando JWT
+* Autorização baseada em roles
+* Rotas protegidas por middleware
+* Validação de dados utilizando Zod
+* Separação entre autenticação e autorização
+* Clientes filtrados de acordo com o usuário autenticado
+* Uso de `select` do Prisma para controlar dados retornados
+* `hashPassword` não é retornado nas respostas
 
 ---
 
@@ -296,17 +570,13 @@ export const registerSchema = z.object({
 });
 ```
 
-A validação é realizada por um middleware reutilizável:
-
-```text
-validate(schema)
-```
-
-Isso permite utilizar o mesmo middleware em diferentes endpoints:
+A validação é realizada através de um middleware reutilizável:
 
 ```ts
 validate(registerSchema)
 ```
+
+ou:
 
 ```ts
 validate(loginSchema)
@@ -323,9 +593,9 @@ Request
    ↓
 safeParse(req.body)
    ↓
-┌───────────────┐
-│ Dados válidos?│
-└───────────────┘
+┌────────────────┐
+│ Dados válidos? │
+└────────────────┘
      ↓       ↓
     NÃO     SIM
      ↓       ↓
@@ -334,240 +604,62 @@ safeParse(req.body)
         Controller
 ```
 
-Quando os dados são inválidos, a requisição é encerrada com:
+Quando os dados são inválidos:
 
-```http
+```text
 400 Bad Request
 ```
 
 Quando são válidos:
 
-```ts
-req.body = result.data;
-next();
-```
-
-e a requisição continua para o Controller.
-
----
-
-# 👤 Usuários
-
-Os usuários possuem atualmente informações como:
-
 ```text
-id
-name
-email
-hashPassword
-role
-active
+next()
 ```
 
-## Role
-
-O campo `role` representa o nível/função do usuário dentro do sistema.
-
-Atualmente o cadastro utiliza:
-
-```text
-ATENDENTE
-```
-
-A estrutura permite evoluir posteriormente para diferentes níveis de acesso, como:
-
-```text
-ADMIN
-ATENDENTE
-```
-
-ou outras funções necessárias ao sistema.
-
----
-
-## Active
-
-O campo:
-
-```text
-active
-```
-
-representa se a conta está habilitada para utilização.
-
-Exemplo:
-
-```text
-active: true
-```
-
-Usuário habilitado.
-
-```text
-active: false
-```
-
-Usuário desativado.
-
-A intenção é permitir desativar uma conta sem necessariamente apagar o usuário e seu histórico do banco de dados.
+e a requisição continua para o próximo middleware ou Controller.
 
 ---
 
 # 🌐 Endpoints atuais
 
+## Sistema
+
+| Método | Endpoint  | Descrição             |
+| ------ | --------- | --------------------- |
+| `GET`  | `/`       | Verifica a API        |
+| `GET`  | `/status` | Retorna status da API |
+| `GET`  | `/api`    | Informações da API    |
+
 ## Authentication
 
-| Método | Endpoint         | Descrição         | Status |
-| ------ | ---------------- | ----------------- | ------ |
-| `POST` | `/auth/register` | Cadastra usuário  | ✅      |
-| `POST` | `/auth/login`    | Autentica usuário | ✅      |
+| Método | Endpoint         | Descrição         |
+| ------ | ---------------- | ----------------- |
+| `POST` | `/auth/register` | Cadastra usuário  |
+| `POST` | `/auth/login`    | Autentica usuário |
 
-### Register
+## Clientes
 
-```http
-POST /auth/register
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "name": "Joao",
-  "email": "joao@email.com",
-  "password": "123456"
-}
-```
-
-### Login
-
-```http
-POST /auth/login
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "email": "joao@email.com",
-  "password": "123456"
-}
-```
+| Método | Endpoint   | Descrição                           | Autenticação |
+| ------ | ---------- | ----------------------------------- | ------------ |
+| `GET`  | `/clients` | Lista clientes de acordo com a role | JWT          |
 
 ---
 
 # 📊 Status HTTP utilizados
 
-O projeto está utilizando códigos HTTP de acordo com o resultado das operações.
-
-| Status | Uso                                           |
-| ------ | --------------------------------------------- |
-| `200`  | Login realizado com sucesso                   |
-| `201`  | Usuário cadastrado                            |
-| `400`  | Dados enviados são inválidos                  |
-| `401`  | Credenciais de autenticação inválidas         |
-| `403`  | Usuário autenticado, mas sem permissão/acesso |
-| `409`  | Email já cadastrado                           |
-| `500`  | Erro interno inesperado                       |
+| Status | Uso                                              |
+| ------ | ------------------------------------------------ |
+| `200`  | Operação realizada com sucesso                   |
+| `201`  | Usuário cadastrado                               |
+| `400`  | Dados enviados são inválidos                     |
+| `401`  | Usuário não autenticado ou credenciais inválidas |
+| `403`  | Usuário autenticado, mas sem permissão           |
+| `409`  | Email já cadastrado                              |
+| `500`  | Erro interno inesperado                          |
 
 ---
 
-# 🛡️ Tratamento de erros
-
-O backend já possui tratamento para situações como:
-
-### Email já cadastrado
-
-```http
-409 Conflict
-```
-
-```json
-{
-  "message": "Email já cadastrado"
-}
-```
-
-### Credenciais inválidas
-
-```http
-401 Unauthorized
-```
-
-```json
-{
-  "message": "Email ou senha incorretos"
-}
-```
-
-### Dados inválidos
-
-```http
-400 Bad Request
-```
-
-```json
-{
-  "message": "Dados inválidos",
-  "errors": {
-    "email": "Email inválido"
-  }
-}
-```
-
-### Erro interno
-
-```http
-500 Internal Server Error
-```
-
-```json
-{
-  "message": "Erro interno no servidor"
-}
-```
-
----
-
-# 🔄 Fluxo de cadastro
-
-```text
-Cliente
-   │
-   │ POST /auth/register
-   ▼
-Auth Route
-   │
-   ▼
-validate(registerSchema)
-   │
-   ├── inválido ──────► 400
-   │
-   ▼
-Auth Controller
-   │
-   ▼
-registerUser()
-   │
-   ├── email existente ─► 409
-   │
-   ▼
-bcrypt.hash()
-   │
-   ▼
-Prisma
-   │
-   ▼
-MySQL
-   │
-   ▼
-201 Created
-```
-
----
-
-# 🔄 Fluxo de login
+# 🔄 Fluxo de autenticação
 
 ```text
 Cliente
@@ -579,8 +671,6 @@ Auth Route
    ▼
 validate(loginSchema)
    │
-   ├── inválido ──────► 400
-   │
    ▼
 Auth Controller
    │
@@ -590,18 +680,63 @@ loginUser()
    ▼
 Busca usuário
    │
-   ├── inválido ──────► 401
-   │
    ▼
 bcrypt.compare()
    │
-   ├── senha incorreta ─► 401
+   ├── Inválido ──────► 401
    │
    ▼
-Usuário autenticado
+Geração do JWT
    │
    ▼
-200 OK
+Token
+   │
+   ▼
+Cliente
+```
+
+---
+
+# 🔄 Fluxo de uma rota protegida
+
+```text
+Cliente
+   │
+   │ GET /clients
+   │ Authorization: Bearer TOKEN
+   ▼
+authenticate
+   │
+   ▼
+JWT válido?
+   │
+   ├── NÃO ──────► 401
+   │
+   ▼
+req.user
+   │
+   ▼
+authorize()
+   │
+   ▼
+Role permitida?
+   │
+   ├── NÃO ──────► 403
+   │
+   ▼
+Controller
+   │
+   ▼
+Service
+   │
+   ▼
+Prisma
+   │
+   ▼
+MySQL
+   │
+   ▼
+Resposta
 ```
 
 ---
@@ -610,9 +745,7 @@ Usuário autenticado
 
 O projeto utiliza **MySQL** como banco de dados e **Prisma ORM** como camada de acesso.
 
-O Prisma é responsável por abstrair o acesso ao banco e permitir trabalhar com os modelos através de TypeScript.
-
-Exemplo conceitual:
+O Prisma é responsável por abstrair o acesso ao banco e fornecer uma interface tipada para trabalhar com os modelos.
 
 ```text
 Application
@@ -635,46 +768,64 @@ O projeto ainda está em desenvolvimento.
 * [x] Login
 * [x] Validação com Zod
 * [x] Middleware de validação
-* [x] Tratamento básico de erros
-* [ ] JWT
-* [ ] Variável `JWT_SECRET`
-* [ ] Access Token
-* [ ] Middleware de autenticação
-* [ ] Validação de JWT
-* [ ] `req.user`
-* [ ] Proteção de rotas
+* [x] JWT
+* [x] Geração de Access Token
+* [x] Middleware de autenticação
+* [x] `req.user`
 
 ### Autorização
 
-* [ ] Controle por `role`
-* [ ] Rotas exclusivas para administradores
-* [ ] Permissões de atendentes
-* [ ] Bloqueio de usuários desativados
+* [x] Roles
+* [x] `ADMIN`
+* [x] `ATENDENTE`
+* [x] Middleware de autorização
+* [x] Proteção de rotas
+* [x] Controle de acesso por role
 
 ### Usuários
 
+* [x] Cadastro
+* [x] Login
+* [x] Controle de usuário ativo/inativo
 * [ ] Listagem de usuários
 * [ ] Buscar usuário
 * [ ] Atualizar usuário
 * [ ] Desativar usuário
 * [ ] Alterar role
-* [ ] Alterar senha
 
-### Atendimento
+### Clientes
 
-* [ ] Estrutura de atendimentos
-* [ ] Cadastro de atendimento
-* [ ] Atualização de status
-* [ ] Histórico
-* [ ] Associação entre atendente e atendimento
+* [x] Modelagem de clientes
+* [x] Relacionamento entre usuário e cliente
+* [x] Listagem de clientes
+* [x] Filtro de clientes por atendente
+* [ ] Cadastro de clientes
+* [ ] Atualização de clientes
+* [ ] Sistema de status de atendimento
+* [ ] Histórico de atendimentos
+
+### Frontend
+
+* [ ] React
+* [ ] Tela de login
+* [ ] Dashboard
+* [ ] Lista de atendimentos
+* [ ] Área administrativa
+* [ ] Área do atendente
+
+### Integração
+
+* [ ] Integração com chatbot
+* [ ] Recebimento de solicitações de atendimento
+* [ ] Histórico de conversas
+* [ ] Mensagens
+* [ ] Atualização em tempo real
 
 ### Qualidade
 
-* [ ] Centralização de erros
-* [ ] Custom Error Classes
+* [ ] Tratamento centralizado de erros
 * [ ] Testes automatizados
 * [ ] Logs estruturados
-* [ ] Documentação da API
 * [ ] Swagger/OpenAPI
 * [ ] Docker
 * [ ] Deploy
@@ -683,19 +834,19 @@ O projeto ainda está em desenvolvimento.
 
 # 📚 Objetivo de aprendizado
 
-Além de construir uma aplicação funcional, este projeto está sendo utilizado para praticar conceitos importantes de desenvolvimento backend:
+Este projeto está sendo desenvolvido como um projeto prático para aprofundar conhecimentos em desenvolvimento backend.
+
+Principais conceitos praticados:
 
 * TypeScript
 * Node.js
 * Express
-* REST API
+* APIs REST
 * Arquitetura em camadas
 * Controllers
 * Services
 * Middlewares
-* Validação de dados
 * Zod
-* Hash de senhas
 * bcrypt
 * Prisma ORM
 * MySQL
@@ -703,8 +854,9 @@ Além de construir uma aplicação funcional, este projeto está sendo utilizado
 * Autenticação
 * JWT
 * Autorização
-* Roles e permissões
+* RBAC (Role-Based Access Control)
 * Segurança de APIs
+* Relacionamentos entre tabelas
 * Tratamento de erros
 
 O objetivo é evoluir o projeto gradualmente, aproximando sua estrutura de uma aplicação backend utilizada em um ambiente profissional.
@@ -715,23 +867,32 @@ O objetivo é evoluir o projeto gradualmente, aproximando sua estrutura de uma a
 
 **Backend em desenvolvimento.**
 
-A primeira etapa de autenticação já possui:
+Atualmente o projeto possui:
 
 ```text
 ✅ Express
 ✅ TypeScript
 ✅ Prisma
 ✅ MySQL
-✅ Cadastro
+✅ Cadastro de usuários
 ✅ Login
 ✅ bcrypt
 ✅ Zod
 ✅ Middleware de validação
-✅ Tratamento de erros
-⬜ JWT
-⬜ Autorização
-⬜ Rotas protegidas
+✅ JWT
+✅ Middleware de autenticação
+✅ Middleware de autorização
+✅ Roles ADMIN e ATENDENTE
+✅ Rotas protegidas
+✅ Modelagem de clientes
+✅ Relacionamento User → Client
+✅ GET /clients
+✅ Filtro de clientes por atendente
 ```
 
-O próximo grande marco do projeto é implementar **JWT**, permitindo autenticar requisições e proteger endpoints da API.
+O próximo objetivo é continuar a construção do **sistema de gerenciamento de atendimentos** e iniciar o desenvolvimento da interface com **React**.
 
+```
+
+**Essa versão já representa bem melhor o estado atual do seu projeto.** Eu também removi a parte que dizia que JWT estava "em desenvolvimento", porque **agora ele já existe no seu projeto**.
+```
