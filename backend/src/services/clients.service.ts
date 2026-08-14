@@ -36,3 +36,32 @@ export async function getClients(userID: number, role : Role){
         throw new Error("Role inválido")
     }
 }
+
+export async function createClient(
+    name: string,
+    phone: string, 
+    attendantId : number){
+    const existingUser = await prisma.client.findUnique({
+        where: {
+            attendantId_phone: {
+                attendantId,
+                phone
+            }
+        }
+    });
+    if(existingUser) throw new Error("Usuario ja existe no sistema");
+
+    const newClient = await prisma.client.create({
+        data: {
+            name,
+            phone,
+            attendantId
+        }
+    })
+
+    return {
+        name: newClient.name,
+        phone: newClient.phone,
+        attendantId: newClient.attendantId
+    }
+}

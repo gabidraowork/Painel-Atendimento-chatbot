@@ -1,7 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "../lib/prisma.js"
 import { generateToken } from "../lib/jwt.js"
-import { error } from "node:console";
 
 export async function registerUser(
     name: string,

@@ -17,6 +17,7 @@ model User {
   role         Role
   active       Boolean  @default(true)
   hashPassword String
+  apiKeys      ApiKey[]
   clients      Client[]
 
   @@map("users")
@@ -24,7 +25,7 @@ model User {
 
 model Client {
   id          Int      @id @default(autoincrement())
-  phone       String   @unique
+  phone       String
   name        String
   attendantId Int
   createdAt   DateTime @default(now())
@@ -32,8 +33,23 @@ model Client {
   answered    Boolean  @default(false)
   attendant   User     @relation(fields: [attendantId], references: [id])
 
+  @@unique([attendantId, phone])
   @@index([attendantId])
   @@map("clients")
+}
+
+model ApiKey {
+  id        Int      @id @default(autoincrement())
+  name      String
+  keyHash   String   @unique
+  userId    Int
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "api_keys_userId_fkey")
+  @@map("api_keys")
 }
 
 enum Role {

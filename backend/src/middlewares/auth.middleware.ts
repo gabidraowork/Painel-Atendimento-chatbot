@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { Role } from "../generated/prisma/enums";
 
 function getJwtSecret(): string { 
     const JWT_SECRET = process.env.JWT_SECRET;
@@ -45,7 +46,7 @@ export function authenticate(
 
         req.user = {
             userId: payload.userId as number,
-            role: payload.role as string
+            role: payload.role as Role
         };
 
         next();

@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import "dotenv/config"
+import { Role } from "../generated/prisma/enums";
 
 function getJwtSecret(): string {
     const secret = process.env.JWT_SECRET;
@@ -10,7 +11,7 @@ function getJwtSecret(): string {
 
     return secret;
 }
-export function generateToken(userId: number, role: string) {
+export function generateToken(userId: number, role: Role) {
     return jwt.sign(
         {
             userId,
