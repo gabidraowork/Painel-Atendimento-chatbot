@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { Role } from "../generated/prisma/enums";
+import prisma from "../lib/prisma.js"
 
 function getJwtSecret(): string { 
     const JWT_SECRET = process.env.JWT_SECRET;
@@ -14,7 +15,7 @@ function getJwtSecret(): string {
 }
 
 
-export function authenticate(
+export async function authenticate(
     req: Request,
     res: Response,
     next: NextFunction
@@ -41,6 +42,17 @@ export function authenticate(
         if (typeof payload === "string") {
             return res.status(401).json({
                 message: "Token inválido"
+            });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: (payload as any).userId },
+            select: { id: true, role: true, active: true }
+        });
+
+        if (!user || !user.active) {
+            return res.status(401).json({
+                message: "Usuário inativo ou inexistente"
             });
         }
 

@@ -23,13 +23,14 @@ export async function ApiKeyMiddleware(
 
         const existingApiKey = await prisma.apiKey.findFirst({
             where: {
-                keyHash
+                keyHash,
+                active: true
             }
         })
 
-        if(!existingApiKey){
+        if(!existingApiKey || !existingApiKey.active){
             return res.status(401).json({
-                message: "API key não cadastrada"
+                message: "API key inválida ou inativa"
             })
         }
 

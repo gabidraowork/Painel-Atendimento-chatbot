@@ -3,8 +3,11 @@ import authRoutes from "./routes/auth.routes.js"
 import usersRoutes from "./routes/users.routes.js"
 import clientsRoutes from "./routes/clients.routes.js"
 import apiKeyRoutes from "./routes/apiKey.routes.js"
+import { globalLimiter } from "./configs/rateLimit.config.js";
+
 const app = express();
 
+app.use(globalLimiter);
 app.use(express.json());
 app.use("/auth", authRoutes);
 app.use("/users", usersRoutes);

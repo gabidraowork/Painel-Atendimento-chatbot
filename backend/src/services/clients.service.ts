@@ -65,3 +65,32 @@ export async function createClient(
         attendantId: newClient.attendantId
     }
 }
+
+export async function destroyClient(
+    phone : string,
+    attendantId: number
+) {
+    const client = await prisma.client.findUnique({
+        where: {
+            attendantId_phone: {
+                attendantId,
+                phone
+            }  
+        }
+    });
+    if (!client){
+        throw new Error ("Usuario nao existe");
+    }
+
+    const deleteClient = await prisma.client.delete({
+        where: {
+            id: client.id
+        }
+    })
+
+    return {
+        id: deleteClient.id,
+        name: deleteClient.name,
+        phone: deleteClient.phone
+    }
+}

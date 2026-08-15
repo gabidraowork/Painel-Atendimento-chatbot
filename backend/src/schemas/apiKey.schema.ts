@@ -1,8 +1,10 @@
 import { z } from "zod";
 
-export const registerSchema = z.object({
-    "x-api-key": z
-        .string()
-        .min(1, "Chave de Api inválida")
-        .max(500, "Chave de Api inválida")
+export const createApiKeySchema = z.object({
+    name: z.string()
+        .trim()
+        .min(3, "Nome deve ter pelo menos 3 caracteres")
+        .max(100)
 });
+
+
