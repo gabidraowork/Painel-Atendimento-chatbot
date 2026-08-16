@@ -1,4 +1,4 @@
-import { Role } from "../generated/prisma/enums.ts";
+import { Role } from "../generated/prisma/enums.js";
 
 declare global {
     namespace Express {

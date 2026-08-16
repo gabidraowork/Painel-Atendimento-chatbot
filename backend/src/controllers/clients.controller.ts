@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createClient, getClients, destroyClient } from "../services/clients.service.js";
+import { createClient, getClients, destroyClient, uptadeClientStatus } from "../services/clients.service.js";
 
 export async function listClients(req: Request, res: Response){
 
@@ -96,6 +96,56 @@ export async function deleteClient(req: Request, res: Response){
             message: "Usuário não existe"
         });
         }
+
+        return res.status(500).json({
+            message: "Erro interno no servidor"
+        });
+    }
+}
+
+export async function updateStatus(
+    req: Request,
+    res: Response
+) {
+    if (!req.user){
+        return res.status(401).json({
+            message: "Usuário não autenticado"
+        })
+    }
+
+    const { phone, answered } = req.body;
+
+    if(!phone || answered === undefined) {
+        return res.status(400).json({
+            message: "Bad request"
+        });
+    }
+
+    const { userId, role } = req.user;
+
+    try {
+
+        const client = await uptadeClientStatus(
+            phone,
+            userId,
+            answered
+        );
+
+        return res.status(200).json({
+            message: "Status atualizado com sucesso",
+            client
+        });
+    } catch(err){
+        if (
+            err instanceof Error &&
+            err.message === "Cliente nao encontrado"
+        ) {
+            return res.status(404).json({
+                message: "Cliente nao encontrado"
+            });
+        }
+
+        console.log(err);
 
         return res.status(500).json({
             message: "Erro interno no servidor"

@@ -1,5 +1,5 @@
 import  crypto  from "node:crypto";
-import prisma from "../lib/prisma";
+import prisma from "../lib/prisma.js";
 
 export async function createApiKey(userId : number, name: string){
     const apiKey = crypto.randomBytes(32).toString("hex");

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { Role } from "../generated/prisma/enums";
+import { Role } from "../generated/prisma/enums.js";
 import prisma from "../lib/prisma.js"
 
 function getJwtSecret(): string { 

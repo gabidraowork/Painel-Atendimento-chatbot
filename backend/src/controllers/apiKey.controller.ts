@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { createApiKey } from "../services/apiKey.service";
+import { createApiKey } from "../services/apiKey.service.js";
 export async function registerApiKey(req: Request, res: Response) {
     if (!req.user) {
         return res.status(401).json({

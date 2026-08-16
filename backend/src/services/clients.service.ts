@@ -94,3 +94,40 @@ export async function destroyClient(
         phone: deleteClient.phone
     }
 }
+
+export async function uptadeClientStatus(
+    phone: string,
+    attendantId: number,
+    answered: boolean
+) {
+    const client = await prisma.client.findUnique({
+        where: {
+            attendantId_phone: {
+                attendantId,
+                phone
+            }
+        }
+    });
+
+    if (!client){
+        throw new Error("Cliente nao encontrado");
+    }
+
+    return await prisma.client.update({
+        where: {
+            attendantId_phone: {
+                attendantId,
+                phone
+            }
+        },
+        data: {
+            answered
+        },
+        select: {
+            id: true,
+            name: true,
+            phone: true,
+            answered: true
+        }
+    })
+}

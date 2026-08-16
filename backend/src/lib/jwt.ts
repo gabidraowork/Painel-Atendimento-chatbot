@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import "dotenv/config"
-import { Role } from "../generated/prisma/enums";
+import { Role } from "../generated/prisma/enums.js";
 
 function getJwtSecret(): string {
     const secret = process.env.JWT_SECRET;

@@ -3,7 +3,6 @@ import { login, register } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { loginSchema, registerSchema } from "../schemas/auth.schema.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
-import { authorize } from "../middlewares/authorize.middleware.js";
 
 const router = Router();
 

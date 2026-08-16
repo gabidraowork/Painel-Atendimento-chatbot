@@ -1,4 +1,3 @@
-import app from "../app.js"
 import rateLimit from "express-rate-limit";
 
 const minuteLimit = 15;

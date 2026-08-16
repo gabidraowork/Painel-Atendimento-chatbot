@@ -16,3 +16,12 @@ export const deleteClientSchema = z.object({
         .string()
         .refine(validator.isMobilePhone, "Telefone inválido"),
 });
+
+export const updateClientStatusSchema = z.object({
+    phone: z
+        .string()
+        .refine(validator.isMobilePhone, "Telefone inválido"),
+    
+    answered: z
+            .boolean()
+})
