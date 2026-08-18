@@ -1,0 +1,8 @@
+{
+  "name": "Painel CRM Atendimento",
+  "description": "Protótipo frontend CRM em React integrado ao backend de atendimento ao cliente com autenticação, painel geral e gestão de clientes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

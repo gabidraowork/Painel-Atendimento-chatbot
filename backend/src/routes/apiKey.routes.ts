@@ -7,6 +7,7 @@ import { createApiKeySchema } from "../schemas/apiKey.schema.js";
 import { ApiKeyMiddleware } from "../middlewares/apiKey.middleware.js";
 import { registerClient, updateStatus } from "../controllers/clients.controller.js";
 import { registerClientSchema, updateClientStatusSchema } from "../schemas/clients.schema.js";
+
 const router = Router();
 
 router.post("/api-key", authenticate, authorize("ADMIN","ATENDENTE"), validate(createApiKeySchema), registerApiKey);
