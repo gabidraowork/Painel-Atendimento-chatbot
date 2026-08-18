@@ -1,648 +1,300 @@
-# 📋 Painel de Atendimento — API Backend
+# 📋 Painel de Atendimento — Full-Stack CRM & Automação de Chatbot
 
-Backend robusto e escalável para gerenciamento de atendentes, clientes e triagem de atendimentos humanos encaminhados por chatbots. Desenvolvido com **Node.js**, **TypeScript**, **Express**, **Prisma ORM** e **MySQL / MariaDB**.
+Solução full-stack robusta e escalável para centralização de atendimentos ao cliente, gerenciamento de atendentes humanos e triagem automatizada de leads encaminhados por chatbots externos (n8n, Typebot, WhatsApp, Telegram, Blip, Evolution API).
+
+Construído com arquitetura moderna: **React 18**, **TypeScript**, **Vite**, **Tailwind CSS**, **Node.js**, **Express**, **Prisma ORM** e **MySQL / MariaDB**.
 
 ---
 
 ## 📑 Sumário
 
-- [Visão Geral](#-visão-geral)
-- [Funcionalidades Principais](#-funcionalidades-principais)
-- [Arquitetura do Sistema](#-arquitetura-do-sistema)
-- [Tecnologias e Dependências](#-tecnologias-e-dependências)
-- [Estrutura de Pastas](#-estrutura-de-pastas)
-- [Requisitos do Sistema](#-requisitos-do-sistema)
-- [Instalação e Configuração](#-instalação-e-configuração)
-  - [1. Clonar o Repositório](#1-clonar-o-repositório)
-  - [2. Instalar Dependências](#2-instalar-dependências)
-  - [3. Configurar Variáveis de Ambiente](#3-configurar-variáveis-de-ambiente)
-  - [4. Executar Migrações do Banco de Dados](#4-executar-migrações-do-banco-de-dados)
-  - [5. Iniciar o Servidor](#5-iniciar-o-servidor)
-- [Documentação da API (Endpoints)](#-documentação-da-api-endpoints)
-  - [Rotas de Sistema](#rotas-de-sistema)
-  - [Rotas de Autenticação (`/auth`)](#rotas-de-autenticação-auth)
-  - [Rotas de Usuários (`/users`)](#rotas-de-usuários-users)
-  - [Rotas de Clientes (`/clients`)](#rotas-de-clientes-clients)
-  - [Rotas de Automação e Chatbot (`/automation`)](#rotas-de-automação-e-chatbot-automation)
-- [Códigos de Status HTTP](#-códigos-de-status-http)
+- [Visão Geral e Objetivos](#-visão-geral-e-objetivos)
+- [✨ Novidades e Atualizações Recentes](#-novidades-e-atualizações-recentes)
+- [Funcionalidades do Sistema](#-funcionalidades-do-sistema)
+  - [Painel Frontend (React + Vite)](#painel-frontend-react--vite)
+  - [API Backend (Express + Prisma)](#api-backend-express--prisma)
+- [Arquitetura Full-Stack](#-arquitetura-full-stack)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Guia de Instalação e Execução](#-guia-de-instalação-e-execução)
+  - [1. Backend & Banco de Dados](#1-backend--banco-de-dados)
+  - [2. Frontend (Painel Web)](#2-frontend-painel-web)
+- [Guia de Integração com Chatbots & n8n (Docker)](#-guia-de-integração-com-chatbots--n8n-docker)
+- [Documentação Completa da API](#-documentação-completa-da-api)
+  - [Autenticação (`/auth`)](#autenticação-auth)
+  - [Usuários (`/users`)](#usuários-users)
+  - [Clientes (`/clients`)](#clientes-clients)
+  - [Automação de Chatbots (`/automation`)](#automação-de-chatbots-automation)
 - [Modelo de Dados (Database Schema)](#-modelo-de-dados-database-schema)
-- [Políticas de Segurança](#-políticas-de-segurança)
-- [Roadmap de Desenvolvimento](#-roadmap-de-desenvolvimento)
+- [Segurança & Isolamento de Dados](#-segurança--isolamento-de-dados)
+- [Roadmap do Projeto](#-roadmap-do-projeto)
 - [Como Contribuir](#-como-contribuir)
 - [Licença](#-licença)
 
 ---
 
-## 📌 Visão Geral
+## 📌 Visão Geral e Objetivos
 
-O **Painel de Atendimento** é uma solução de backend criada para centralizar e organizar o fluxo de atendimento ao cliente de empresas que utilizam chatbots para primeiro contato e necessitam de transferência ágil para atendentes humanos.
+O **Painel de Atendimento** foi desenvolvido para solucionar a fragmentação entre o primeiro atendimento automatizado (bots de IA e fluxos de mensagens) e o atendimento humanizado das empresas:
 
-### Casos de Uso:
-1. **Para Atendentes:** Visualização e gerenciamento exclusivo dos clientes sob sua responsabilidade, controle do status de atendimento (`answered`) e histórico de contatos.
-2. **Para Administradores:** Visão panorâmica de todos os clientes da base, supervisão de atendentes, auditoria de usuários cadastrados e gerenciamento de permissões.
-3. **Para Sistemas de Chatbot / Automação:** Registro automático de novos leads/clientes e atualização de status diretamente via API Key segura (`x-api-key`), sem necessidade de expor credenciais de usuário.
-
----
-
-## ✨ Funcionalidades Principais
-
-- 🔐 **Autenticação & Sessão:** Cadastro de usuários e login com geração de JSON Web Token (JWT) com validade configurada.
-- 🛡️ **Controle de Acesso Baseado em Perfis (RBAC):** Restrição granular de rotas por perfis (`ADMIN` e `ATENDENTE`).
-- 🤖 **Integração para Chatbots (API Keys):** Sistema de geração de chaves de API com armazenamento seguro via hash SHA-256 para automações externas.
-- 👥 **Gestão de Clientes:** Cadastro, listagem segmentada por atendente, alteração de status de chamado e exclusão de registros.
-- 🧪 **Validação Rigorosa de Dados:** Validação de formato de telefone internacional, e-mails e tamanhos de campos utilizando schemas Zod e Validator.js.
-- ⏱️ **Proteção contra Abusos:** Rate limiting global ativo para prevenir ataques de força bruta e DoS.
-- 🗄️ **Acesso a Dados Otimizado:** Prisma ORM com driver nativo MariaDB/MySQL e consultas projetadas (`select`) para evitar vazamento de dados sensíveis (ex.: `hashPassword`).
+1. **Centralização de Fila de Chamados:** Receber os leads transbordados de chatbots em tempo real na carteira do atendente responsável.
+2. **Experiência Visual e Produtiva:** Painel limpo, rápido e intuitivo para o atendente alternar status de atendimento (`Pendente` / `Atendido`), buscar contatos e registrar novos clientes.
+3. **Visão Gerencial (Administrador):** Acompanhamento global de todos os clientes, distribuição de chamados por atendente e supervisão de equipe.
+4. **Integração Desacoplada e Segura:** Chatbots externos integram-se através de chaves de API (`x-api-key`) com hash SHA-256 no banco, sem expor senhas ou tokens sensíveis.
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## ✨ Novidades e Atualizações Recentes
 
-O projeto adota uma arquitetura em camadas bem delimitadas, garantindo baixo acoplamento e facilidade de manutenção e testes:
+O projeto evoluiu de uma API isolada para uma **plataforma full-stack completa**:
+
+- 🎨 **Interface Frontend Completa:** Aplicação SPA desenvolvida em **React 18**, **Tailwind CSS** e ícones **Lucide**, com layout responsivo e transições fluidas.
+- 📊 **Dashboard com Métricas em Tempo Real:** Visualização instantânea do Total de Clientes, Atendimentos Concluídos, Chamados Pendentes e Taxa de Resolução.
+- 👥 **Módulo de Cadastro de Atendentes:** Tela de login aprimorada com formulário de registro de novos usuários (`/auth/register`) e autenticação automática pós-cadastro.
+- 🔑 **Gestão e Isolamento de Chaves de API:**
+  - Geração de API Keys com cópia em 1 clique e controle de visibilidade (máscara `•••••••`).
+  - **Isolamento total por conta de usuário**: cada atendente/administrador gerencia exclusivamente as suas chaves salvas localmente.
+- 🧪 **Testador Interativo de Webhooks:** Ferramenta no próprio painel para simular o disparo de leads do bot diretamente contra a API (`POST /automation/client`).
+- 📱 **Sanitização Inteligente de Telefones:** Backend e frontend agora formatam e limpam automaticamente espaços, parênteses e caracteres especiais (`+55 43 99909-0228` ➔ `+5543999090228`).
+- 🐳 **Compatibilidade com Docker & n8n:** Configuração e suporte para chamadas vindas de containers Docker (`host.docker.internal`).
+
+---
+
+## 🚀 Funcionalidades do Sistema
+
+### Painel Frontend (React + Vite)
+- **Tela de Login / Cadastro:** Alternância rápida entre Login e Criação de Conta, além de botões para teste rápido com perfis de demonstração (Atendente / Administrador).
+- **Dashboard:** Cards de estatísticas vitais e visão geral do desempenho do atendimento.
+- **Lista de Clientes:**
+  - Busca instantânea por nome e número de telefone.
+  - Filtros rápidos: `Todos`, `Pendentes` e `Atendidos`.
+  - Alternador direto de status com feedback visual.
+  - Exclusão com confirmação de segurança.
+- **Cadastro Manual:** Inclusão rápida de novos clientes com validação de campos.
+- **Central de Automação & API Keys:**
+  - Gerador de novas chaves criptográficas.
+  - Exemplos de integração com snippets cURL prontos para copiar.
+  - Simulador de webhook para testes rápidos.
+
+### API Backend (Express + Prisma)
+- **Autenticação JWT:** Emissão e validação de tokens com expiração configurada.
+- **Controle de Acesso Baseado em Perfis (RBAC):** Níveis de permissão estritos para `ADMIN` e `ATENDENTE`.
+- **Validação com Schemas Zod & Validator:** Garantia de tipos, tamanhos mínimos e números de telefone válidos.
+- **Proteção contra Abuso (Rate Limiting):** Limitador de requisições global para prevenir ataques DoS e força bruta.
+- **Hashing Criptográfico Duplo:** Senhas com `bcrypt` (10 rounds) e API Keys com hash `SHA-256`.
+
+---
+
+## 🏗️ Arquitetura Full-Stack
 
 ```text
-                        ┌───────────────────────────────┐
-                        │       Requisição HTTP         │
-                        └──────────────┬────────────────┘
-                                       │
-                                       ▼
-                        ┌───────────────────────────────┐
-                        │      Global Rate Limiter      │
-                        └──────────────┬────────────────┘
-                                       │
-                                       ▼
-                        ┌───────────────────────────────┐
-                        │       Rotas do Express        │
-                        └──────────────┬────────────────┘
-                                       │
-       ┌───────────────────────────────┼───────────────────────────────┐
-       ▼                               ▼                               ▼
-┌──────────────┐              ┌─────────────────┐             ┌─────────────────┐
-│  Validation  │              │ Authentication  │             │  Authorization  │
-│  Middleware  │              │ (JWT / API Key) │             │ (RBAC: Role)    │
-└──────┬───────┘              └────────┬────────┘             └────────┬────────┘
-       └───────────────────────────────┼───────────────────────────────┘
-                                       │
-                                       ▼
-                        ┌───────────────────────────────┐
-                        │         Controllers           │
-                        │ (Entrada HTTP & Resposta)     │
-                        └──────────────┬────────────────┘
-                                       │
-                                       ▼
-                        ┌───────────────────────────────┐
-                        │          Services             │
-                        │ (Regras de Negócio & Lógica)  │
-                        └──────────────┬────────────────┘
-                                       │
-                                       ▼
-                        ┌───────────────────────────────┐
-                        │       Prisma ORM Client       │
-                        └──────────────┬────────────────┘
-                                       │
-                                       ▼
-                        ┌───────────────────────────────┐
-                        │     Banco MySQL / MariaDB     │
-                        └───────────────────────────────┘
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │                       Frontend (React 18 + Vite)                        │
+ │  - Dashboard (Stats)         - Gestão de Clientes      - Login/Cadastro │
+ │  - Gestor de API Keys        - Testador de Webhook     - RBAC State     │
+ └────────────────────────────────────┬────────────────────────────────────┘
+                                      │  HTTP / REST (JSON)
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │                        API Backend (Node + Express)                     │
+ │  ├── Rate Limiter Global                                                │
+ │  ├── Middlewares: Auth (JWT), API Key (SHA-256), RBAC, Zod Validate    │
+ │  ├── Controllers & Services: Auth, Clients, Users, Automation           │
+ └────────────────────────────────────┬────────────────────────────────────┘
+                                      │  Prisma ORM
+                                      ▼
+ ┌─────────────────────────────────────────────────────────────────────────┐
+ │                   Banco de Dados (MySQL / MariaDB)                      │
+ │  - users (id, name, email, role, hashPassword)                          │
+ │  - clients (id, phone, name, attendantId, answered)                     │
+ │  - api_keys (id, name, keyHash, userId, active)                         │
+ └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Divisão de Responsabilidades
+---
 
-| Camada | Diretório | Responsabilidade |
-| :--- | :--- | :--- |
-| **Configs** | `src/configs/` | Configurações globais de middlewares e limites de taxa (`rateLimit`). |
-| **Routes** | `src/routes/` | Mapeamento dos endpoints, associação de métodos HTTP e encadeamento de middlewares. |
-| **Middlewares** | `src/middlewares/` | Interceptação de requisições, validação de payload com Zod, autenticação JWT/API Key e checagem de roles. |
-| **Schemas** | `src/schemas/` | Definição dos contratos de validação e sanitização com Zod e Validator. |
-| **Controllers** | `src/controllers/` | Tratamento de requisições, extração de parâmetros e montagem de respostas HTTP padronizadas. |
-| **Services** | `src/services/` | Concentração das regras de negócio, hashing criptográfico e orquestração do Prisma. |
-| **Lib / DB** | `src/lib/` | Instanciação e conexão singleton do Prisma Client e utilitários JWT. |
+## 🛠️ Tecnologias Utilizadas
+
+### Frontend
+- **React 18** com **TypeScript**
+- **Vite** (Build tool e servidor de alta performance)
+- **Tailwind CSS v4** (Estilização responsiva e utilitária)
+- **Lucide React** (Pacote de ícones)
+- **Context API** (Gerenciamento de estado de autenticação e sessão)
+
+### Backend
+- **Node.js 20+** & **TypeScript**
+- **Express v5** (Framework HTTP minimalista)
+- **Prisma ORM v7** (Modelagem de dados e queries tipadas)
+- **MariaDB / MySQL** (Banco de dados relacional)
+- **bcrypt** & **jsonwebtoken** (Criptografia e autenticação)
+- **Zod** & **validator.js** (Sanitização e validação de contratos)
+- **express-rate-limit** & **helmet** (Segurança HTTP e proteção contra abuso)
 
 ---
 
-## 🛠️ Tecnologias e Dependências
-
-### Core & Runtime
-- **[Node.js](https://nodejs.org/):** Ambiente de execução JavaScript server-side.
-- **[TypeScript](https://www.typescriptlang.org/):** Tipagem estática para maior previsibilidade e segurança de código.
-- **[Express v5](https://expressjs.com/):** Framework web minimalista para construção da API REST.
-- **[TSX](https://github.com/privatenumber/tsx):** Executor de TypeScript em tempo de desenvolvimento.
-
-### Banco de Dados & ORM
-- **[Prisma ORM v7](https://www.prisma.io/):** ORM declarativo para modelagem e migrações tipadas.
-- **[@prisma/adapter-mariadb](https://www.npmjs.com/package/@prisma/adapter-mariadb) & [mariadb](https://github.com/mariadb-corporation/mariadb-connector-nodejs):** Driver otimizado para conexões com MariaDB e MySQL.
-
-### Segurança & Validação
-- **[jsonwebtoken](https://github.com/auth0/node-jsonwebtoken):** Emissão e verificação de tokens de acesso JWT.
-- **[bcrypt](https://github.com/kelektiv/node.bcrypt.js):** Criptografia de senhas com algoritmo de hashing adaptativo.
-- **[Zod v4](https://zod.dev/):** Declaração e inferência de schemas de validação com TypeScript.
-- **[validator](https://github.com/validatorjs/validator.js):** Validações complementares de strings (ex.: números de telefone).
-- **[express-rate-limit](https://github.com/express-rate-limit/express-rate-limit):** Limitação de taxa para proteção contra DoS e abuso de requisições.
-- **[helmet](https://helmetjs.github.io/):** Proteção de cabeçalhos HTTP contra vulnerabilidades comuns.
-- **[cors](https://github.com/expressjs/cors):** Habilitação de Cross-Origin Resource Sharing.
-
----
-
-## 📁 Estrutura de Pastas
+## 📁 Estrutura do Projeto
 
 ```text
-backend/
-├── prisma/
-│   └── schema.prisma              # Definição dos modelos e relacionamentos do banco
-├── prisma.config.ts               # Configuração do Prisma CLI e migrações
-├── src/
-│   ├── configs/
-│   │   └── rateLimit.config.ts    # Configuração de limitação de taxa de requisições
-│   ├── controllers/
-│   │   ├── apiKey.controller.ts   # Handler para geração de API Keys
-│   │   ├── auth.controller.ts     # Handlers de cadastro e login de usuários
-│   │   ├── clients.controller.ts  # Handlers de gerenciamento de clientes
-│   │   └── user.controller.ts     # Handlers para listagem e consulta de usuários
-│   ├── generated/                 # Artefatos tipados gerados pelo Prisma Client
-│   ├── lib/
-│   │   ├── jwt.ts                 # Utilitários de assinatura e validação JWT
-│   │   └── prisma.ts              # Conexão singleton com o banco de dados
-│   ├── middlewares/
-│   │   ├── apiKey.middleware.ts   # Autenticação via header x-api-key para bots
-│   │   ├── auth.middleware.ts     # Autenticação via Bearer Token JWT
-│   │   ├── authorize.middleware.ts# Autorização baseada em Roles (RBAC)
-│   │   └── validate.middleware.ts # Validador genérico de payloads Zod
-│   ├── routes/
-│   │   ├── apiKey.routes.ts       # Rotas de automação (/automation)
-│   │   ├── auth.routes.ts         # Rotas de autenticação (/auth)
-│   │   ├── clients.routes.ts      # Rotas de clientes (/clients)
-│   │   └── users.routes.ts        # Rotas administrativas de usuários (/users)
-│   ├── schemas/
-│   │   ├── apiKey.schema.ts       # Schema Zod para geração de API Key
-│   │   ├── auth.schema.ts         # Schemas Zod para login e registro
-│   │   └── clients.schema.ts      # Schemas Zod para clientes e status
-│   ├── services/
-│   │   ├── apiKey.service.ts      # Regra de criação e hash SHA-256 de API Keys
-│   │   ├── auth.service.ts        # Regras de negócio de autenticação e hashing bcrypt
-│   │   ├── clients.service.ts     # Consultas e mutações da base de clientes
-│   │   └── user.service.ts        # Consultas da base de usuários
-│   ├── types/
-│   │   └── express.d.ts           # Extensão de tipos do Express (req.user)
-│   ├── app.ts                     # Instância e configuração principal do Express
-│   ├── server.ts                  # Ponto de entrada (boot do servidor HTTP)
-│   └── test-db.ts                 # Script utilitário para testar conectividade
-├── .env.example                   # Modelo de variáveis de ambiente
-├── package.json                   # Dependências e scripts do projeto
-└── tsconfig.json                  # Configurações do compilador TypeScript
+├── backend/
+│   ├── prisma/
+│   │   └── schema.prisma              # Definição dos modelos e relacionamentos do banco
+│   ├── src/
+│   │   ├── configs/                   # Configuração de rate limiter e ambientes
+│   │   ├── controllers/               # Handlers de entrada e resposta HTTP
+│   │   ├── middlewares/               # Middlewares (JWT, API Key, RBAC, Zod)
+│   │   ├── routes/                    # Definição dos endpoints REST
+│   │   ├── schemas/                   # Schemas Zod de validação de payload
+│   │   ├── services/                  # Regras de negócio e operações de banco
+│   │   ├── app.ts                     # Instância principal do Express
+│   │   └── server.ts                  # Boot do servidor HTTP
+│   └── tsconfig.json
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/                # Componentes reutilizáveis (Header, Sidebar, Cards, Tabelas)
+│   │   ├── config/                    # Constantes e variáveis de ambiente do client
+│   │   ├── context/                   # Contexto de autenticação (AuthContext)
+│   │   ├── pages/                     # Páginas (Dashboard, Clientes, Novo Cliente, API Keys, Login)
+│   │   ├── services/                  # Camada de comunicação com a API (HTTP Client, Auth, Clients, ApiKey)
+│   │   ├── types/                     # Tipos TypeScript compartilhados
+│   │   ├── App.tsx                    # Componente raiz da aplicação
+│   │   └── main.tsx                   # Ponto de entrada do React
+│   └── index.html
+│
+├── .env.example                       # Modelo de configuração de variáveis de ambiente
+├── package.json                       # Scripts globais de build e dependências
+└── vite.config.ts                     # Configuração do Vite e proxy reverso
 ```
 
 ---
 
-## 💻 Requisitos do Sistema
+## 💻 Guia de Instalação e Execução
 
-Antes de iniciar, certifique-se de ter instalado em seu ambiente:
-
-- **Node.js:** Versão `18.x` ou superior (recomendado `20.x` LTS).
-- **Gerenciador de Pacotes:** `npm` (versão 9+) ou `yarn` / `pnpm`.
-- **Banco de Dados:** Servidor **MySQL 8.0+** ou **MariaDB 10.5+** em execução.
+### Pré-requisitos
+- **Node.js:** Versão 18 ou superior.
+- **MySQL / MariaDB:** Servidor em execução na porta 3306.
 
 ---
 
-## 🚀 Instalação e Configuração
+### 1. Backend & Banco de Dados
 
-### 1. Clonar o Repositório
+1. Acesse o diretório `backend/` e instale as dependências:
+   ```bash
+   cd backend
+   npm install
+   ```
 
-```bash
-git clone https://github.com/seu-usuario/painel-atendimento.git
-cd painel-atendimento/backend
-```
+2. Crie o arquivo `.env` baseado no `.env.example`:
+   ```env
+   PORT=3000
+   DB_HOST="localhost"
+   DB_PORT=3306
+   DB_USER="seu_usuario"
+   DB_PASSWORD="sua_senha"
+   DB_NAME="painel_atendimento"
+   DATABASE_URL="mysql://seu_usuario:sua_senha@localhost:3306/painel_atendimento"
+   JWT_SECRET="segredo_super_seguro_jwt"
+   ```
 
-### 2. Instalar Dependências
+3. Execute as migrações do Prisma:
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+   ```
 
-```bash
-npm install
-```
-
-### 3. Configurar Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do diretório `backend/` baseado no modelo abaixo:
-
-```env
-# Configurações do Servidor
-PORT=3000
-
-# Conexão com o Banco de Dados (MySQL / MariaDB)
-DB_HOST="localhost"
-DB_PORT=3306
-DB_USER="seu_usuario"
-DB_PASSWORD="sua_senha"
-DB_NAME="painel_atendimento"
-
-# URL de Conexão utilizada pelas migrações do Prisma
-DATABASE_URL="mysql://seu_usuario:sua_senha@localhost:3306/painel_atendimento"
-
-# Segredo para assinatura de Tokens JWT
-JWT_SECRET="seu_segredo_super_seguro_e_longo_aqui"
-```
-
-### 4. Executar Migrações do Banco de Dados
-
-Gere o cliente do Prisma e aplique as tabelas no seu banco de dados:
-
-```bash
-# Gerar os tipos do Prisma Client
-npx prisma generate
-
-# Executar as migrações no banco de dados configurado
-npx prisma migrate dev --name init
-```
-
-### 5. Iniciar o Servidor
-
-```bash
-# Modo de desenvolvimento (com hot-reload via tsx)
-npm run dev
-```
-
-O servidor estará disponível e escutando requisições em: `http://localhost:3000`.
+4. Inicie o backend:
+   ```bash
+   npm run dev
+   ```
 
 ---
 
-## 📖 Documentação da API (Endpoints)
+### 2. Frontend (Painel Web)
 
-Todas as requisições que enviam corpo devem utilizar o cabeçalho `Content-Type: application/json`.
+1. No diretório raiz ou `frontend/`, instale as dependências:
+   ```bash
+   npm install
+   ```
 
----
+2. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
 
-### Rotas de Sistema
-
-#### Verificar Status da API
-Retorna uma mensagem confirmando que a API está ativa.
-
-- **Método:** `GET`
-- **Endpoint:** `/`
-- **Autenticação:** Nenhuma
-- **Resposta de Sucesso (200 OK):**
-```json
-{
-  "message": "API do painel de atendimento funcionando"
-}
-```
+3. Acesse a aplicação no navegador em `http://localhost:3000`.
 
 ---
 
-### Rotas de Autenticação (`/auth`)
+## 🤖 Guia de Integração com Chatbots & n8n (Docker)
 
-#### 1. Cadastrar Usuário
-Cria um novo usuário atendente no sistema com senha protegida por bcrypt.
+Quando o **n8n roda em um container Docker** e o servidor backend roda localmente na sua máquina (VS Code):
 
-- **Método:** `POST`
-- **Endpoint:** `/auth/register`
-- **Autenticação:** Nenhuma
-- **Corpo da Requisição:**
-```json
-{
-  "name": "Maria Silva",
-  "email": "maria@empresa.com",
-  "password": "senhaSegura123"
-}
-```
-- **Resposta de Sucesso (201 Created):**
-```json
-{
-  "message": "Usuário cadastrado com sucesso",
-  "user": {
-    "id": 1,
-    "name": "Maria Silva",
-    "email": "maria@empresa.com",
-    "role": "ATENDENTE",
-    "active": true
+### Configuração no nó HTTP Request do n8n:
+- **Method:** `POST`
+- **URL:** `http://host.docker.internal:3000/automation/client` *(Windows/macOS)* ou `http://172.17.0.1:3000/automation/client` *(Linux)*
+- **Authentication:** `None`
+- **Headers:**
+  ```json
+  {
+    "Content-Type": "application/json",
+    "x-api-key": "SUA_API_KEY_GERADA_NO_PAINEL"
   }
-}
-```
-- **Respostas de Erro:**
-  - `400 Bad Request`: Dados inválidos (ex.: nome < 3 caracteres, e-mail mal formatado, senha < 6 caracteres).
-  - `409 Conflict`: E-mail já cadastrado.
-
----
-
-#### 2. Autenticar Usuário (Login)
-Valida credenciais e gera o token de acesso JWT.
-
-- **Método:** `POST`
-- **Endpoint:** `/auth/login`
-- **Autenticação:** Nenhuma
-- **Corpo da Requisição:**
-```json
-{
-  "email": "maria@empresa.com",
-  "password": "senhaSegura123"
-}
-```
-- **Resposta de Sucesso (200 OK):**
-```json
-{
-  "message": "Usuário logado com sucesso",
-  "user": {
-    "id": 1,
-    "name": "Maria Silva",
-    "email": "maria@empresa.com",
-    "role": "ATENDENTE",
-    "active": true
-  },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-- **Respostas de Erro:**
-  - `401 Unauthorized`: E-mail/senha incorretos ou usuário inativo (`active: false`).
-
----
-
-#### 3. Testar Autenticação
-Rota utilitária para verificar a validade do Bearer Token.
-
-- **Método:** `GET`
-- **Endpoint:** `/auth/test`
-- **Headers:** `Authorization: Bearer <SEU_JWT_TOKEN>`
-- **Resposta de Sucesso (200 OK):**
-```json
-{
-  "message": "Você está autenticado!",
-  "user": {
-    "userId": 1,
-    "role": "ATENDENTE"
+  ```
+- **Body (JSON):**
+  ```json
+  {
+    "name": "{{ $json.name }}",
+    "phone": "{{ $json.phone }}"
   }
-}
-```
+  ```
 
 ---
 
-### Rotas de Usuários (`/users`)
+## 📖 Documentação Completa da API
 
-#### Listar Todos os Usuários
-Retorna a listagem de todos os atendentes e administradores do sistema.
+Todas as rotas aceitam e retornam `Content-Type: application/json`.
 
-- **Método:** `GET`
-- **Endpoint:** `/users`
-- **Autenticação:** JWT obrigatório
-- **Permissão (Role):** Apenas `ADMIN`
-- **Headers:** `Authorization: Bearer <TOKEN_ADMIN>`
-- **Resposta de Sucesso (200 OK):**
-```json
-{
-  "users": [
-    {
-      "id": 1,
-      "name": "Administrador",
-      "email": "admin@empresa.com",
-      "role": "ADMIN",
-      "createdAt": "2026-08-01T10:00:00.000Z",
-      "updatedAt": "2026-08-01T10:00:00.000Z"
-    },
-    {
-      "id": 2,
-      "name": "Maria Silva",
-      "email": "maria@empresa.com",
-      "role": "ATENDENTE",
-      "createdAt": "2026-08-10T14:30:00.000Z",
-      "updatedAt": "2026-08-10T14:30:00.000Z"
-    }
-  ]
-}
-```
-- **Respostas de Erro:**
-  - `401 Unauthorized`: Token ausente ou inválido.
-  - `403 Forbidden`: Usuário não possui perfil `ADMIN`.
+### Autenticação (`/auth`)
+
+| Método | Endpoint | Autenticação | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/register` | Nenhuma | Cria uma nova conta de atendente no sistema. |
+| `POST` | `/auth/login` | Nenhuma | Autentica usuário e retorna JWT + dados do perfil. |
+| `GET` | `/auth/test` | Bearer JWT | Valida se o token de sessão atual é válido. |
 
 ---
 
-### Rotas de Clientes (`/clients`)
+### Usuários (`/users`)
 
-#### 1. Listar Clientes
-Lista clientes com filtro automático baseado no perfil do usuário autenticado:
-- Se **ADMIN**: Lista todos os clientes e os dados do atendente responsável.
-- Se **ATENDENTE**: Lista apenas os clientes vinculados ao seu próprio `userId`.
-
-- **Método:** `GET`
-- **Endpoint:** `/clients`
-- **Autenticação:** JWT (`ADMIN` ou `ATENDENTE`)
-- **Headers:** `Authorization: Bearer <SEU_JWT_TOKEN>`
-- **Resposta de Sucesso para ATENDENTE (200 OK):**
-```json
-{
-  "clients": [
-    {
-      "name": "João Souza",
-      "phone": "+5511999999999",
-      "answered": false
-    }
-  ]
-}
-```
-- **Resposta de Sucesso para ADMIN (200 OK):**
-```json
-{
-  "clients": [
-    {
-      "id": 1,
-      "phone": "+5511999999999",
-      "name": "João Souza",
-      "attendant": {
-        "id": 2,
-        "name": "Maria Silva",
-        "email": "maria@empresa.com",
-        "role": "ATENDENTE",
-        "active": true
-      }
-    }
-  ]
-}
-```
+| Método | Endpoint | Permissão | Descrição |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/users` | `ADMIN` (JWT) | Lista todos os usuários (atendentes e administradores). |
 
 ---
 
-#### 2. Cadastrar Cliente Manualmente
-Permite ao atendente registrar um novo cliente diretamente na sua carteira.
+### Clientes (`/clients`)
 
-- **Método:** `POST`
-- **Endpoint:** `/clients`
-- **Autenticação:** JWT (`ATENDENTE`)
-- **Headers:** `Authorization: Bearer <SEU_JWT_TOKEN>`
-- **Corpo da Requisição:**
-```json
-{
-  "name": "Carlos Pereira",
-  "phone": "+5511988887777"
-}
-```
-- **Resposta de Sucesso (201 Created):**
-```json
-{
-  "message": "Client criated",
-  "newClient": {
-    "name": "Carlos Pereira",
-    "phone": "+5511988887777",
-    "attendantId": 2
-  }
-}
-```
+| Método | Endpoint | Permissão | Descrição |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/clients` | `ADMIN` ou `ATENDENTE` | Lista clientes (Admin vê todos; Atendente vê apenas os seus). |
+| `POST` | `/clients` | `ATENDENTE` | Cadastra manualmente um novo cliente na carteira do atendente. |
+| `PATCH` | `/clients/answered` | `ADMIN` ou `ATENDENTE` | Atualiza o status de atendimento (`answered: true/false`). |
+| `DELETE` | `/clients` | `ADMIN` ou `ATENDENTE` | Remove um cliente vinculado à carteira. |
 
 ---
 
-#### 3. Atualizar Status de Atendimento (`answered`)
-Atualiza o indicador de chamado respondido/atendido.
+### Automação de Chatbots (`/automation`)
 
-- **Método:** `PATCH`
-- **Endpoint:** `/clients/answered`
-- **Autenticação:** JWT (`ADMIN` ou `ATENDENTE`)
-- **Headers:** `Authorization: Bearer <SEU_JWT_TOKEN>`
-- **Corpo da Requisição:**
-```json
-{
-  "phone": "+5511988887777",
-  "answered": true
-}
-```
-- **Resposta de Sucesso (200 OK):**
-```json
-{
-  "message": "Status atualizado com sucesso",
-  "client": {
-    "id": 1,
-    "name": "Carlos Pereira",
-    "phone": "+5511988887777",
-    "answered": true
-  }
-}
-```
-
----
-
-#### 4. Excluir Cliente
-Remove um cliente vinculado ao atendente.
-
-- **Método:** `DELETE`
-- **Endpoint:** `/clients`
-- **Autenticação:** JWT (`ADMIN` ou `ATENDENTE`)
-- **Headers:** `Authorization: Bearer <SEU_JWT_TOKEN>`
-- **Corpo da Requisição:**
-```json
-{
-  "phone": "+5511988887777"
-}
-```
-- **Resposta de Sucesso (201 Created):**
-```json
-{
-  "message": "Client deleted",
-  "deletedClient": {
-    "id": 1,
-    "name": "Carlos Pereira",
-    "phone": "+5511988887777"
-  }
-}
-```
-
----
-
-### Rotas de Automação e Chatbot (`/automation`)
-
-Endpoints projetados para integração segura de chatbots (ex.: WhatsApp Bot, Typebot, n8n, Evolution API, Blip).
-
-#### 1. Gerar Nova API Key
-Gera um token criptográfico único para integração. A chave bruta em texto claro é retornada **apenas uma vez** no momento da criação; no banco, armazena-se apenas o hash SHA-256.
-
-- **Método:** `POST`
-- **Endpoint:** `/automation/api-key`
-- **Autenticação:** JWT (`ADMIN` ou `ATENDENTE`)
-- **Headers:** `Authorization: Bearer <SEU_JWT_TOKEN>`
-- **Corpo da Requisição:**
-```json
-{
-  "name": "Bot Atendimento WhatsApp"
-}
-```
-- **Resposta de Sucesso (201 Created):**
-```json
-{
-  "message": "API Key gerada com sucesso",
-  "apiKey": "a4f89b1c78e93214589dbe0923485712ef0481239ab78c1234ef67890123abcd"
-}
-```
-
----
-
-#### 2. Registrar Cliente via Chatbot
-Insere um cliente que solicitou transbordo humano diretamente na fila do atendente dono da API Key.
-
-- **Método:** `POST`
-- **Endpoint:** `/automation/client`
-- **Autenticação:** Header `x-api-key`
-- **Headers:** `x-api-key: <SUA_API_KEY_GERADA>`
-- **Corpo da Requisição:**
-```json
-{
-  "name": "Lead Vindo do Chatbot",
-  "phone": "+5511977776666"
-}
-```
-- **Resposta de Sucesso (201 Created):**
-```json
-{
-  "message": "Client criated",
-  "newClient": {
-    "name": "Lead Vindo do Chatbot",
-    "phone": "+5511977776666",
-    "attendantId": 2
-  }
-}
-```
-
----
-
-#### 3. Atualizar Status do Cliente via Chatbot
-Permite que o bot marque um atendimento como finalizado ou em andamento.
-
-- **Método:** `PATCH`
-- **Endpoint:** `/automation/client/answered`
-- **Autenticação:** Header `x-api-key`
-- **Headers:** `x-api-key: <SUA_API_KEY_GERADA>`
-- **Corpo da Requisição:**
-```json
-{
-  "phone": "+5511977776666",
-  "answered": true
-}
-```
-- **Resposta de Sucesso (200 OK):**
-```json
-{
-  "message": "Status atualizado com sucesso",
-  "client": {
-    "id": 2,
-    "name": "Lead Vindo do Chatbot",
-    "phone": "+5511977776666",
-    "answered": true
-  }
-}
-```
-
----
-
-## 🚦 Códigos de Status HTTP
-
-| Código | Significado | Contexto de Uso |
-| :---: | :--- | :--- |
-| `200 OK` | Sucesso | Consultas (GET) e atualizações bem-sucedidas (PATCH). |
-| `201 Created` | Criado | Cadastros de usuários, clientes ou chaves de API. |
-| `400 Bad Request` | Requisição Inválida | Falha na validação de schema (Zod) ou campos ausentes. |
-| `401 Unauthorized` | Não Autenticado | Token JWT inválido/expirado, API Key incorreta ou usuário inativo. |
-| `403 Forbidden` | Acesso Negado | Usuário autenticado, porém sem permissão para o recurso solicitado. |
-| `404 Not Found` | Não Encontrado | Cliente ou recurso não localizado no banco de dados. |
-| `409 Conflict` | Conflito | Tentativa de cadastrar um e-mail já existente. |
-| `429 Too Many Requests` | Limite Excedido | Bloqueio temporário por excesso de requisições (Rate Limiter). |
-| `500 Internal Error` | Erro no Servidor | Falha inesperada durante a execução da requisição. |
+| Método | Endpoint | Autenticação | Descrição |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/automation/api-key` | Bearer JWT | Gera uma nova API Key vinculada ao usuário logado. |
+| `POST` | `/automation/client` | Header `x-api-key` | Insere lead/cliente vindo de robô direto na fila do atendente. |
+| `PATCH` | `/automation/client/answered` | Header `x-api-key` | Atualiza status de atendimento via automação externa. |
 
 ---
 
 ## 🗄️ Modelo de Dados (Database Schema)
-
-O esquema relacional é gerenciado pelo **Prisma ORM** e mapeado para o banco MySQL:
 
 ```prisma
 enum Role {
@@ -695,64 +347,46 @@ model ApiKey {
 }
 ```
 
-### Relacionamentos:
-- **`User (1) ── (N) Client`**: Um atendente possui múltiplos clientes sob seu atendimento. A unicidade `@@unique([attendantId, phone])` assegura que um mesmo atendente não tenha clientes duplicados com o mesmo telefone.
-- **`User (1) ── (N) ApiKey`**: Um usuário pode gerar múltiplas chaves para diferentes instâncias ou integrações de chatbot.
+---
+
+## 🛡️ Segurança & Isolamento de Dados
+
+1. **Isolamento de Carteiras:** O atendente só acessa clientes vinculados ao seu próprio `attendantId`, extraído do token JWT assinado.
+2. **Isolamento de Chaves de API no Navegador:** As chaves armazenadas no client são segmentadas por `userId`, impedindo vazamento entre contas no mesmo dispositivo.
+3. **Proteção Criptográfica:**
+   - Senhas criptografadas com `bcrypt` (10 salt rounds).
+   - API Keys armazenadas exclusivamente como hash `SHA-256` (`keyHash`).
+4. **Sanitização de Respostas:** Campos sensíveis como `hashPassword` e `keyHash` nunca são expostos em respostas de endpoints.
+5. **Rate Limiting:** Bloqueio temporário automático após excesso de requisições maliciosas.
 
 ---
 
-## 🛡️ Políticas de Segurança
+## 🗺️ Roadmap do Projeto
 
-1. **Criptografia de Senhas:** Hashes gerados com algoritmo adaptativo `bcrypt` com salt factor de 10 rounds. A senha original nunca é armazenada.
-2. **Armazenamento Seguro de Chaves:** As API Keys para integrações de bots utilizam hash SHA-256 (`keyHash`). Chaves vazadas não podem ser reconstruídas a partir da base de dados.
-3. **Proteção de Segredos:** Senhas e hashes nunca são retornados nas respostas de endpoints através de projeções seletivas (`select`) no Prisma.
-4. **Isolamento de Escopo:** Nas consultas de atendentes, o `attendantId` é extraído diretamente do token JWT assinado, impedindo que um usuário acesse registros de terceiros manipulando parâmetros da requisição.
-5. **Rate Limiting:** Proteção global contra sobrecarga e ataques de negação de serviço (`express-rate-limit`).
-
----
-
-## 🗺️ Roadmap de Desenvolvimento
-
-### Backend
-- [x] Autenticação e cadastro com JWT e Bcrypt
-- [x] Controle de acesso RBAC (`ADMIN` e `ATENDENTE`)
-- [x] Validação estruturada com Zod e Validator
-- [x] Gestão de Clientes e Status de Atendimento
-- [x] Módulo de Automação com API Keys para Chatbots
-- [x] Limitação de taxa com Rate Limiter
-- [ ] Tratamento global centralizado de exceções (Error Middleware)
-- [ ] Documentação interativa com Swagger / OpenAPI
-- [ ] Cobertura de testes automatizados unitários e de integração (Jest / Supertest)
+- [x] API REST com autenticação JWT e RBAC (`ADMIN` / `ATENDENTE`)
+- [x] Módulo de Automação de Chatbot com chaves de API (`x-api-key`)
+- [x] Painel SPA em React 18 com Tailwind CSS e Lucide Icons
+- [x] Dashboard com métricas de atendimento em tempo real
+- [x] Gestão de clientes com busca, filtros rápidos e alteração de status
+- [x] Tela de Login & Cadastro de novos atendentes com auto-login
+- [x] Isolamento de chaves de API por conta de usuário no frontend
+- [x] Sanitização automática de telefones e payloads
+- [ ] Notificações sonoras/visuais ao receber novo lead do chatbot
 - [ ] Atualização em tempo real via WebSockets (Socket.io)
-
-### Frontend (Próxima Fase)
-- [ ] Painel do Atendente (fila de atendimento em tempo real, filtros por status)
-- [ ] Painel do Administrador (gestão de usuários, métricas de atendimento e auditoria)
-- [ ] Interface de geração e revogação de API Keys
+- [ ] Exportação de relatórios em CSV/Excel
 
 ---
 
 ## 🤝 Como Contribuir
 
-Contribuições são muito bem-vindas! Para colaborar com o projeto:
-
-1. Faça um **Fork** do projeto.
-2. Crie uma **Branch** para a sua feature:
-   ```bash
-   git checkout -b feature/minha-nova-feature
-   ```
-3. Realize seus **Commits** com mensagens claras e semânticas:
-   ```bash
-   git commit -m "feat: adiciona rota de listagem de histórico de chamados"
-   ```
-4. Envie sua Branch para o repositório remoto:
-   ```bash
-   git push origin feature/minha-nova-feature
-   ```
-5. Abra um **Pull Request** detalhando as alterações implementadas.
+1. Faça um **Fork** do repositório.
+2. Crie uma branch para a sua feature (`git checkout -b feature/minha-feature`).
+3. Faça o commit das suas alterações (`git commit -m 'feat: adiciona nova funcionalidade'`).
+4. Envie para o repositório remoto (`git push origin feature/minha-feature`).
+5. Abra um **Pull Request**.
 
 ---
 
 ## 📄 Licença
 
-Este projeto é distribuído sob a licença **ISC**. Consulte o arquivo de licença do projeto para obter mais detalhes.
+Este projeto é distribuído sob a licença **ISC**. Consulte o arquivo de licença para mais informações.
